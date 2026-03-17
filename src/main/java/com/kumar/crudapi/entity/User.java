@@ -2,10 +2,7 @@ package com.kumar.crudapi.entity;
 
 import com.kumar.crudapi.base.AuditableBaseEntity;
 import com.kumar.crudapi.entity.vo.AddressDetails;
-import jakarta.persistence.Column;
-import jakarta.persistence.Embedded;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
@@ -35,4 +32,9 @@ public class User extends AuditableBaseEntity<Long> {
 
     @Embedded
     private AddressDetails address;
+
+    private Integer age;
+
+    @Enumerated(EnumType.STRING)
+    private Status status;
 }

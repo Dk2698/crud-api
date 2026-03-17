@@ -15,4 +15,12 @@ public class UserController extends BaseCrudController<Long, UserDTO, User> {
     public UserController(BaseCrudService<Long, UserDTO, User> service, BaseRepository<User, Long> repository) {
         super(service, repository);
     }
+    //GET /users?
+    //    email:null&
+    //    deleted:false&
+    //    active:true&
+    //    age:between=18,30&
+    //    status:in=ACTIVE,INACTIVE
+
+    //http://localhost:8080/api/users?first_name:contains=John&age:between=18, 30&status:in=ACTIVE,INACTIVE&deleted:false& email:nnull
 }

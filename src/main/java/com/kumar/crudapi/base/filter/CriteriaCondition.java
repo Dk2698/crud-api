@@ -5,41 +5,63 @@ import java.util.Map;
 
 public enum CriteriaCondition {
 
-    EQUALS("eq"),
-    NOT_EQUALS("ne"),
-    LESS_THAN("lt"),
-    GREATER_THAN("gt"),
-    LESS_THAN_EQUAL("lte"),
-    GREATER_THAN_EQUAL("gte"),
-    IN("in"),
-    NOT_IN("nin"),
-    CONTAINS("contains"),
-    NOT_CONTAINS("ncontains"),
-    BETWEEN("between"),
-    NOT_BETWEEN("nbetween"),
-    NULL("null"),
-    NOT_NULL("nnull"),
+    EQ("eq"),
+    NE("ne"),
+
+    GT("gt"),
+    LT("lt"),
+    GTE("gte"),
+    LTE("lte"),
+
+    LIKE("like"),
+    NOT_LIKE("nlike"),
+
     STARTS_WITH("startswith"),
     NOT_STARTS_WITH("nstartswith"),
+
     ENDS_WITH("endswith"),
-    NOT_ENDS_WITH("nendswith");
+    NOT_ENDS_WITH("nendswith"),
+
+    IN("in"),
+    NOT_IN("nin"),
+
+    BETWEEN("between"),
+    NOT_BETWEEN("nbetween"),
+
+    IS_NULL("null"),
+    NOT_NULL("nnull"),
+
+    TRUE("true"),
+    FALSE("false"),
+
+    CONTAINS("contains"),
+    NOT_CONTAINS("ncontains");
 
     private static final Map<String, CriteriaCondition> BY_LABEL = new HashMap<>();
 
     static {
-        for (CriteriaCondition e : values()) {
-            BY_LABEL.put(e.label, e);
+        for (CriteriaCondition condition : values()) {
+            BY_LABEL.put(condition.label, condition);
         }
     }
 
-    //( "containss" ), ( "ncontainss" ),  ( "startswiths" ), ( "nstartswiths" ), , ( "endswiths" ), ( "nendswiths")
-    public final String label;
+    private final String label;
 
     CriteriaCondition(String label) {
         this.label = label;
     }
 
+    public String getLabel() {
+        return label;
+    }
+
     public static CriteriaCondition valueOfLabel(String label) {
-        return BY_LABEL.get(label);
+        CriteriaCondition condition = BY_LABEL.get(label.toLowerCase());
+
+        if (condition == null) {
+            throw new IllegalArgumentException("Invalid filter condition: " + label);
+        }
+
+        return condition;
     }
 }

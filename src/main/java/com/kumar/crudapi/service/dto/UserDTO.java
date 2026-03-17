@@ -1,6 +1,7 @@
 package com.kumar.crudapi.service.dto;
 
 import com.kumar.crudapi.base.EntityDTO;
+import com.kumar.crudapi.entity.Status;
 import com.kumar.crudapi.entity.vo.AddressDetails;
 import lombok.*;
 import tools.jackson.databind.PropertyNamingStrategies;
@@ -25,4 +26,6 @@ public class UserDTO implements EntityDTO<Long> {
     private String role;
     private String phone;
     private AddressDetails address;
+    private Integer age;
+    private Status status;
 }

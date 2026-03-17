@@ -21,7 +21,7 @@ public abstract class BaseCrudService<ID extends Serializable, D extends EntityD
 
     private static final String[] falseList = {"false"};
 
-    private static final SimpleCriteria NOT_DELETED_FILTER = new SimpleCriteria("deleted", CriteriaCondition.EQUALS, Arrays.asList(falseList));
+    private static final SimpleCriteria NOT_DELETED_FILTER = new SimpleCriteria("deleted", CriteriaCondition.EQ, Arrays.asList(falseList));
 
     protected BaseRepository<E, ID> repository;
 

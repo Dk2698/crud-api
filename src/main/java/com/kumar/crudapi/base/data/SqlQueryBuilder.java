@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -54,32 +55,129 @@ public class SqlQueryBuilder {
     }
 
     private String buildWhereClause(FilterPredicate filter, List<Object> params, Class<?> entityClass) {
+
         if (filter == null || filter.getConditionsList().isEmpty()) {
-            return " WHERE deleted = false"; // soft delete support
+            return " WHERE deleted = false";
         }
 
         List<String> clauses = filter.getConditionsList().stream().map(cond -> {
-            String clause;
+
+            String column = toColumnName(entityClass, cond.field());
+            Object value = cond.value();
+
             switch (cond.condition()) {
-                case EQUALS -> clause = toColumnName(entityClass, cond.field()) + " = ?";
-                case NOT_EQUALS -> clause = toColumnName(entityClass, cond.field()) + " <> ?";
-                case GREATER_THAN -> clause = toColumnName(entityClass, cond.field()) + " > ?";
-                case GREATER_THAN_EQUAL -> clause = toColumnName(entityClass, cond.field()) + " >= ?";
-                case LESS_THAN -> clause = toColumnName(entityClass, cond.field()) + " < ?";
-                case LESS_THAN_EQUAL -> clause = toColumnName(entityClass, cond.field()) + " <= ?";
-                case CONTAINS -> clause = toColumnName(entityClass, cond.field()) + " LIKE ?";
-                case IN -> {
-//                    List<?> values = (List<?>) cond.field();//TODO
-                    List<Object> values = new ArrayList<>();
-                    String placeholders = values.stream().map(v -> "?").collect(Collectors.joining(","));
-                    clause = toColumnName(entityClass, cond.field()) + " IN (" + placeholders + ")";
-                    params.addAll(values);
-                    return clause;
+
+                case EQ -> {
+                    params.add(value);
+                    return column + " = ?";
                 }
+
+                case NE -> {
+                    params.add(value);
+                    return column + " <> ?";
+                }
+
+                case GT -> {
+                    params.add(value);
+                    return column + " > ?";
+                }
+
+                case GTE -> {
+                    params.add(value);
+                    return column + " >= ?";
+                }
+
+                case LT -> {
+                    params.add(value);
+                    return column + " < ?";
+                }
+
+                case LTE -> {
+                    params.add(value);
+                    return column + " <= ?";
+                }
+
+                case CONTAINS -> {
+                    params.add("%" + value + "%");
+                    return column + " LIKE ?";
+                }
+
+                case STARTS_WITH -> {
+                    params.add(value + "%");
+                    return column + " LIKE ?";
+                }
+
+                case ENDS_WITH -> {
+                    params.add("%" + value);
+                    return column + " LIKE ?";
+                }
+
+                case IN -> {
+                    if (!(value instanceof List<?> values)) {
+                        throw new IllegalArgumentException("IN operator requires a list value");
+                    }
+
+                    if (values.isEmpty()) {
+                        return "1=0"; // no values → always false
+                    }
+
+                    String placeholders = String.join(",", Collections.nCopies(values.size(), "?"));
+
+                    params.addAll(values);
+                    return column + " IN (" + placeholders + ")";
+                }
+
+                case NOT_IN -> {
+                    List<?> values = (List<?>) value;
+
+                    if (values == null || values.isEmpty()) {
+                        return "1=1";
+                    }
+
+                    String placeholders = values.stream()
+                            .map(v -> "?")
+                            .collect(Collectors.joining(","));
+
+                    params.addAll(values);
+                    return column + " NOT IN (" + placeholders + ")";
+                }
+
+                case BETWEEN -> {
+                    List<?> values = (List<?>) value;
+
+                    if (values == null || values.size() < 2) {
+                        throw new IllegalArgumentException("BETWEEN requires 2 values");
+                    }
+
+                    params.add(values.get(0));
+                    params.add(values.get(1));
+                    return column + " BETWEEN ? AND ?";
+                }
+
+                case IS_NULL -> {
+                    return column + " IS NULL";
+                }
+
+                case NOT_NULL -> {
+                    return column + " IS NOT NULL";
+                }
+
+                case TRUE -> {
+                    return column + " = true";
+                }
+
+                case FALSE -> {
+                    return column + " = false";
+                }
+
+                case NOT_CONTAINS -> {
+                    params.add("%" + value + "%");
+                    return column + " NOT LIKE ?";
+                }
+
                 default -> throw new IllegalArgumentException("Unsupported operator: " + cond.condition());
             }
-            params.add(cond.value());
-            return clause;
+
         }).toList();
 
         return " WHERE deleted = false AND " + String.join(" AND ", clauses);

@@ -15,10 +15,7 @@ import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @Log4j2
 public class FilterResolver implements HandlerMethodArgumentResolver {
@@ -56,33 +53,69 @@ public class FilterResolver implements HandlerMethodArgumentResolver {
         final FilterPredicate filterPredicate = new FilterPredicate();
 
         for (var entry : parameters.entrySet()) {
-            String key = entry.getKey().trim();
-            final List<String> value = entry.getValue();
 
-            // Skip empty or special params
-            if (isSingleElementCollectionWithEmptyItem(value) || key.startsWith("_") || IGNORED_PARAMS.contains(key)) {
+            String key = entry.getKey().trim();
+            List<String> value = new ArrayList<>(entry.getValue());
+
+            if (key.startsWith("_") || IGNORED_PARAMS.contains(key)) {
                 continue;
             }
 
-            // Existing filter logic
+            String field;
+            CriteriaCondition condition;
+
+            // 🔹 Parse field + operator FIRST
             if (key.contains(DELIMITER)) {
                 String[] parts = key.split(DELIMITER);
 
-                String rawField = parts[0];
-                String field = CaseUtils.toCamelCase(rawField, false, '_');
-                CriteriaCondition condition = CriteriaCondition.valueOfLabel(parts[1]);
-
-                Object finalValue = value.size() == 1 ? value.get(0) : value;
-
-                filterPredicate.add(new SimpleCriteria(field, condition, finalValue));
+                field = CaseUtils.toCamelCase(parts[0], false, '_');
+                condition = CriteriaCondition.valueOfLabel(parts[1]);
 
             } else {
-                String field = CaseUtils.toCamelCase(key, false, '_');
-
-                filterPredicate.add(value.size() == 1 ? new SimpleCriteria(field, CriteriaCondition.EQUALS, value.getFirst()) : new SimpleCriteria(field, CriteriaCondition.IN, value));
+                field = CaseUtils.toCamelCase(key, false, '_');
+                condition = (value.size() > 1) ? CriteriaCondition.IN : CriteriaCondition.EQ;
             }
+
+            // 🔥 Allow empty values ONLY for special operators
+            boolean isNoValueOperator = switch (condition) {
+                case IS_NULL, NOT_NULL, TRUE, FALSE -> true;
+                default -> false;
+            };
+
+            if (!isNoValueOperator && isSingleElementCollectionWithEmptyItem(value)) {
+                continue;
+            }
+
+            Object finalValue = normalizeValue(condition, value);
+
+            filterPredicate.add(new SimpleCriteria(field, condition, finalValue));
         }
         return filterPredicate;
     }
 
+    private Object normalizeValue(CriteriaCondition condition, List<String> values) {
+
+        // Handle comma-separated values
+        if (values.size() == 1 && values.get(0) != null && values.get(0).contains(",")) {
+            values = Arrays.stream(values.get(0).split(","))
+                    .map(String::trim)
+                    .toList();
+        }
+
+        return switch (condition) {
+
+            case IN, NOT_IN -> values;
+
+            case BETWEEN, NOT_BETWEEN -> {
+                if (values.size() < 2) {
+                    throw new IllegalArgumentException("BETWEEN requires 2 values");
+                }
+                yield values;
+            }
+
+            case IS_NULL, NOT_NULL, TRUE, FALSE -> null;
+
+            default -> values.get(0);
+        };
+    }
 }
