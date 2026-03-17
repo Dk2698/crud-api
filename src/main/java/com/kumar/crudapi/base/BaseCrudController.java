@@ -1,8 +1,13 @@
 package com.kumar.crudapi.base;
 
 
+import com.kumar.crudapi.base.error.BadRequestException;
+import com.kumar.crudapi.base.filter.FilterPredicate;
+import com.kumar.crudapi.base.repo.BaseRepository;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -10,6 +15,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.Serializable;
 import java.lang.reflect.ParameterizedType;
 import java.net.URI;
 import java.util.List;
@@ -17,7 +23,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 @Log4j2
-public class BaseCrudController<ID, D extends EntityDTO<ID>, E extends BaseEntity<ID>> extends BaseController {
+public class BaseCrudController<ID extends Serializable, D extends EntityDTO<ID>, E extends BaseEntity<ID>> extends BaseController {
 
     protected BaseCrudService<ID, D, E> service;
     protected BaseRepository<E, ID> repository;
@@ -95,7 +101,7 @@ public class BaseCrudController<ID, D extends EntityDTO<ID>, E extends BaseEntit
     @PatchMapping(value = "/{id}", consumes = {"application/json", "application/merge-patch+json"})
     public ResponseEntity<D> partialUpdateEntity(
             @PathVariable(value = "id", required = false) final ID id,
-            @NotNull @RequestBody D dto)  {
+            @NotNull @RequestBody D dto) {
         log.debug("REST request to partial update Entity partially : {}, {}", id, dto);
         if (dto.getId() == null) {
             throw new BadRequestException("Invalid id", entityName, "idnull");
@@ -216,42 +222,5 @@ public class BaseCrudController<ID, D extends EntityDTO<ID>, E extends BaseEntit
             entityName = claaz.getSimpleName();
         }
         return entityName;
-    }
-}
-
-@RestController
-public abstract class GenericController<E extends BaseEntity<ID>, ID, RQ, RS> {
-    protected final GenericService<E, ID, RQ, RS> service;
-
-    public GenericController(GenericService<E, ID, RQ, RS> service) {
-        this.service = service;
-    }
-
-    @PostMapping
-    public ResponseEntity<RS> save(@RequestBody RQ request) {
-        return ResponseEntity.ok(service.save(request));
-    }
-
-    @GetMapping
-    public ResponseEntity<List<RS>> findAll() {
-        return ResponseEntity.ok(service.findAll());
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<RS> findById(@PathVariable ID id) {
-        return service.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<RS> update(@PathVariable ID id, @RequestBody RQ request) {
-        return ResponseEntity.ok(service.update(id, request));
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable ID id) {
-        service.deleteById(id);
-        return ResponseEntity.noContent().build();
     }
 }

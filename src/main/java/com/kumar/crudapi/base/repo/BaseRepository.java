@@ -1,22 +1,30 @@
-package com.kumar.crudapi.base;
+package com.kumar.crudapi.base.repo;
 
-import org.springframework.data.repository.ListCrudRepository;
-import org.springframework.data.repository.ListPagingAndSortingRepository;
+import com.kumar.crudapi.base.BaseEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.NoRepositoryBean;
-import org.springframework.data.repository.query.QueryByExampleExecutor;
 
+import java.io.Serializable;
+import java.util.List;
 import java.util.Optional;
 
 @NoRepositoryBean
-public interface BaseRepository<T, ID> extends ListCrudRepository<T, ID>, ListPagingAndSortingRepository<T, ID>, QueryByExampleExecutor<T> {
-    /**
-     * Retrieves an entity by its id which have not been marked as DELETED.
-     *
-     * @param id must not be {@literal null}.
-     * @return the entity with the given id or {@literal Optional#empty()} if none found.
-     * @throws IllegalArgumentException if {@literal id} is {@literal null}.
-     */
+public interface BaseRepository<T extends BaseEntity<ID>, ID extends Serializable> extends JpaRepository<T, ID> {
+
+    default void softDelete(T entity) {
+        if (entity instanceof BaseEntity<?> base) {
+            base.setDeleted(true);
+            save(entity);
+        }
+    }
+
+    default List<T> findAllActive() {
+        return findAll().stream().filter(e -> !e.getDeleted()).toList();
+    }
+
+    //        default void softDelete(T entity) {
+//            entity.softDelete();
+//            save(entity);
+//        }
     Optional<T> findByIdAndDeletedFalse(ID id);
-
-
 }

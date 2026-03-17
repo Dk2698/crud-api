@@ -1,12 +1,8 @@
-package com.kumar.crudapi.base.data;
+package com.kumar.crudapi.base.web;
 
-//import com.logistiex.common.data.filter.CriteriaCondition;
-//import com.logistiex.common.data.filter.FilterPredicate;
-//import com.logistiex.common.data.filter.SimpleCriteria;
 import com.kumar.crudapi.base.filter.CriteriaCondition;
 import com.kumar.crudapi.base.filter.FilterPredicate;
 import com.kumar.crudapi.base.filter.SimpleCriteria;
-import jakarta.validation.constraints.NotNull;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.text.CaseUtils;
 import org.springframework.core.MethodParameter;
@@ -22,6 +18,7 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Log4j2
 public class FilterResolver implements HandlerMethodArgumentResolver {
@@ -41,13 +38,6 @@ public class FilterResolver implements HandlerMethodArgumentResolver {
         return queryParameters;
     }
 
-    /**
-     * Returns whether the given collection has exactly one element that is empty (i.e. doesn't contain text). This is
-     * basically an indicator that a request parameter has been submitted but no value for it.
-     *
-     * @param source must not be {@literal null}.
-     * @return true if the value collection is empty
-     */
     private static boolean isSingleElementCollectionWithEmptyItem(List<?> source) {
         return source.size() == 1 && ObjectUtils.isEmpty(source.get(0));
     }
@@ -57,95 +47,42 @@ public class FilterResolver implements HandlerMethodArgumentResolver {
         return parameter.getParameter().getType() == FilterPredicate.class;
     }
 
-    //    FilterPredicate getPredicate(MethodParameter parameter, MultiValueMap<String, String> queryParameters) {
-    //
-    //        MergedAnnotations annotations = MergedAnnotations.from(parameter.getParameter());
-    //        MergedAnnotation<QuerydslPredicate> predicateAnnotation = annotations.get(QuerydslPredicate.class);
-    //
-    //        TypeInformation<?> domainType = extractTypeInfo(parameter, predicateAnnotation).getRequiredActualType();
-    //
-    //        Optional<Class<? extends QuerydslBinderCustomizer<?>>> bindingsAnnotation = predicateAnnotation.getValue("bindings") //
-    //                .map(CastUtils::cast);
-    //
-    //        QuerydslBindings bindings = bindingsAnnotation //
-    //                .map(it -> bindingsFactory.createBindingsFor(domainType, it)) //
-    //                .orElseGet(() -> bindingsFactory.createBindingsFor(domainType));
-    //
-    //        return predicateBuilder.getPredicate(domainType, queryParameters, bindings);
-    //    }
+    private static final Set<String> IGNORED_PARAMS = Set.of("page", "size", "sort");
 
     @Override
-    public Object resolveArgument(@NotNull MethodParameter parameter, ModelAndViewContainer mavContainer, @NotNull NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {
+    public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer, NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {
 
         final MultiValueMap<String, String> parameters = getQueryParameters(webRequest);
         final FilterPredicate filterPredicate = new FilterPredicate();
+
         for (var entry : parameters.entrySet()) {
             String key = entry.getKey().trim();
             final List<String> value = entry.getValue();
-            if (isSingleElementCollectionWithEmptyItem(value)) {
-                log.debug("{} ignored due to empty value", key);
+
+            // Skip empty or special params
+            if (isSingleElementCollectionWithEmptyItem(value) || key.startsWith("_") || IGNORED_PARAMS.contains(key)) {
                 continue;
             }
 
-            if (key.equals("_s") && !value.isEmpty()) {
-//                filterPredicate.setWildSearchText(value.get(0));
-                continue;
-            } else if (key.startsWith("_")) {
-                // ignore special params as we don't expect entity fields starting with "_"
-                log.debug("ignore special params as we don't expect entity fields starting with _ {} ", key);
-                continue;
-            }
-            log.debug("Processing input {} ", key);
+            // Existing filter logic
             if (key.contains(DELIMITER)) {
-                final String[] strings = key.split(DELIMITER);
-                String fieldName = CaseUtils.toCamelCase(strings[0], false, '_');
-                if (strings.length > 1) {
-                    final CriteriaCondition condition = CriteriaCondition.valueOfLabel(strings[1]);
-                    if (condition != null) {
-                        switch (condition) {
-                            case BETWEEN, NOT_BETWEEN:
-                                if (value.size() == 2) {
-                                    filterPredicate.add(new SimpleCriteria(fieldName, condition, value));
-                                } else {
-                                    throw new IllegalArgumentException(
-                                            "Request parameter '" + strings[0] + " has " + value.size() +
-                                                    " values, required 2");
-                                }
-                                break;
-                            default:
-                                filterPredicate.add(new SimpleCriteria(fieldName, condition, value));
-                        }
+                String[] parts = key.split(DELIMITER);
 
-                    } else {
-                        log.debug("Skipping as we did not find matching condition");
-                        // special param or it may be unsupported operation -
-                        //Assuming it might be a special param, we will ignore
-                    }
-                }
+                String rawField = parts[0];
+                String field = CaseUtils.toCamelCase(rawField, false, '_');
+                CriteriaCondition condition = CriteriaCondition.valueOfLabel(parts[1]);
+
+                Object finalValue = value.size() == 1 ? value.get(0) : value;
+
+                filterPredicate.add(new SimpleCriteria(field, condition, finalValue));
+
             } else {
-                String fieldName = CaseUtils.toCamelCase(key, false, '_');
-                if (value.size() == 1) {
-                    filterPredicate.add(new SimpleCriteria(fieldName, CriteriaCondition.EQUALS, value));
-                } else {
-                    filterPredicate.add(new SimpleCriteria(fieldName, CriteriaCondition.IN, value));
-                }
+                String field = CaseUtils.toCamelCase(key, false, '_');
+
+                filterPredicate.add(value.size() == 1 ? new SimpleCriteria(field, CriteriaCondition.EQUALS, value.getFirst()) : new SimpleCriteria(field, CriteriaCondition.IN, value));
             }
         }
         return filterPredicate;
     }
-
-    //    @Nullable
-    //    private Object getValue(TypeDescriptor targetType, Object value) {
-    //
-    //        if (ClassUtils.isAssignableValue(targetType.getType(), value)) {
-    //            return value;
-    //        }
-    //
-    //        if (conversionService.canConvert(value.getClass(), targetType.getType())) {
-    //            return conversionService.convert(value, TypeDescriptor.forObject(value), targetType);
-    //        }
-    //
-    //        return value;
-    //    }
 
 }

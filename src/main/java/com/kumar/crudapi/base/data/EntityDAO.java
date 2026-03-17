@@ -1,4 +1,4 @@
-package com.kumar.crudapi.base;
+package com.kumar.crudapi.base.data;
 
 import com.kumar.crudapi.base.filter.FilterPredicate;
 import org.springframework.data.domain.Page;
@@ -13,6 +13,7 @@ public interface EntityDAO {
     <T> List<T> findAll(FilterPredicate filter, Class<T> entityClass);
 
     <T> boolean exists(FilterPredicate filter, Class<T> entityClass);
+
     <T> long count(FilterPredicate filter, Class<T> entityClass);
 
 }

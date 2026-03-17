@@ -1,4 +1,4 @@
 package com.kumar.crudapi.base.filter;
 
-public class SimpleCriteria {
+public record SimpleCriteria(String field, CriteriaCondition condition, Object value) {
 }
