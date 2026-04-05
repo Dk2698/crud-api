@@ -29,6 +29,8 @@
 	<properties>
 		<java.version>25</java.version>
 		<mapstruct.version>1.5.5.Final</mapstruct.version>
+<!--		<spring-cloud.version>2025.1.1</spring-cloud.version>-->
+<!--		<micrometer.version>1.6.2</micrometer.version>-->
 	</properties>
 	<dependencies>
 		<dependency>
@@ -99,8 +101,62 @@
 			<artifactId>spring-boot-starter-webmvc-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+
+		<!-- Micrometer Tracing with OpenTelemetry -->
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-tracing-bridge-otel</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-micrometer-tracing-brave</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-zipkin</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-tracing-bridge-brave</artifactId>
+		</dependency>
+
+		<!-- OpenTelemetry SDK -->
+		<dependency>
+			<groupId>io.opentelemetry</groupId>
+			<artifactId>opentelemetry-sdk</artifactId>
+		</dependency>
+
+		<!-- Snowflake ID generator library -->
+		<dependency>
+			<groupId>de.mkammerer.snowflake-id</groupId>
+			<artifactId>snowflake-id</artifactId>
+			<version>0.0.2</version>
+		</dependency>
 	</dependencies>
 
+<!--	<dependencyManagement>-->
+<!--		<dependencies>-->
+<!--			<dependency>-->
+<!--				<groupId>org.springframework.cloud</groupId>-->
+<!--				<artifactId>spring-cloud-dependencies</artifactId>-->
+<!--				<version>${spring-cloud.version}</version>-->
+<!--				<type>pom</type>-->
+<!--				<scope>import</scope>-->
+<!--			</dependency>-->
+<!--		</dependencies>-->
+<!--	</dependencyManagement>-->
+<!--	<dependencyManagement>-->
+<!--		<dependencies>-->
+<!--			<dependency>-->
+<!--				<groupId>io.micrometer</groupId>-->
+<!--				<artifactId>micrometer-tracing-bom</artifactId>-->
+<!--				<version>${micrometer.version}</version>-->
+<!--				<type>pom</type>-->
+<!--				<scope>import</scope>-->
+<!--			</dependency>-->
+<!--		</dependencies>-->
+<!--	</dependencyManagement>-->
 	<build>
 		<plugins>
 			<plugin>
