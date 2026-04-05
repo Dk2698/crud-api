@@ -1,5 +1,6 @@
 package com.kumar.crudapi.base.web;
 
+import com.kumar.crudapi.base.web.interceptor.LoggingInterceptor;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +14,7 @@ import org.springframework.data.web.SortHandlerMethodArgumentResolver;
 import org.springframework.data.web.config.PageableHandlerMethodArgumentResolverCustomizer;
 import org.springframework.data.web.config.SortHandlerMethodArgumentResolverCustomizer;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.util.List;
@@ -62,5 +64,14 @@ public class WebConfigurer implements ServletContextInitializer, WebServerFactor
                 sortResolver.setSortParameter("_sort");
             }
         };
+    }
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(new LoggingInterceptor())
+                .addPathPatterns("/api/**")
+                .excludePathPatterns("/api/auth/**");
+//        registry.addInterceptor(new AuthInterceptor())
+//                .addPathPatterns("/api/**");
     }
 }
