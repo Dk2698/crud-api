@@ -133,6 +133,37 @@
 			<artifactId>snowflake-id</artifactId>
 			<version>0.0.2</version>
 		</dependency>
+
+		<!-- Apache HttpClient 5 -->
+		<dependency>
+			<groupId>org.apache.httpcomponents.client5</groupId>
+			<artifactId>httpclient5</artifactId>
+			<version>5.2.1</version>
+		</dependency>
+
+		<!-- HttpCore5 required for HTTP/2 support -->
+		<dependency>
+			<groupId>org.apache.httpcomponents.core5</groupId>
+			<artifactId>httpcore5</artifactId>
+			<version>5.2.1</version>
+		</dependency>
+
+		<!-- Optional: Apache HttpClient5 Fluent API (nice for testing/debugging) -->
+		<dependency>
+			<groupId>org.apache.httpcomponents.client5</groupId>
+			<artifactId>httpclient5-fluent</artifactId>
+			<version>5.2.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-webflux</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>io.github.resilience4j</groupId>
+			<artifactId>resilience4j-spring-boot3</artifactId>
+			<version>2.0.2</version>
+		</dependency>
 	</dependencies>
 
 <!--	<dependencyManagement>-->
