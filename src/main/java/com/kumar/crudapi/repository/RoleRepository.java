@@ -1,6 +1,5 @@
 package com.kumar.crudapi.repository;
 
-import com.kumar.crudapi.entity.RefreshToken;
 import com.kumar.crudapi.entity.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
 
