@@ -22,14 +22,14 @@ public class JwtInterceptor implements HandlerInterceptor {
 
         String token = authHeader.substring(7);
 
-        if (!JwtUtil.validateToken(token)) {
-            response.setStatus(401);
-            response.getWriter().write("Invalid token");
-            return false;
-        }
+//        if (!JwtUtil.validateToken(token)) {
+//            response.setStatus(401);
+//            response.getWriter().write("Invalid token");
+//            return false;
+//        }
 
-        String username = JwtUtil.extractUsername(token);
-        request.setAttribute("username", username);
+//        String username = JwtUtil.extractUsername(token);
+//        request.setAttribute("username", username);
 
         return true;
     }
