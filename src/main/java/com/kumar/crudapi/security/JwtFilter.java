@@ -1,5 +1,6 @@
 package com.kumar.crudapi.security;
 
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -8,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -16,6 +18,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
 
 @Slf4j
 @Component
@@ -51,18 +54,28 @@ public class JwtFilter extends OncePerRequestFilter {
 //                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 //                return;
 //            }
-            final String username = jwtUtil.extractUsername(token);
+            Claims claims = jwtUtil.getAllClaims(token); // Parse token once
+            final String username = claims.getSubject();
 
             // 2. Validate username and ensure user isn't already authenticated
             if (StringUtils.hasText(username) && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+
+
+                // 1. Extract the authorities list we stored in the token
+                List<String> authorityNames = claims.get("authorities", List.class);
+
+                // 2. Convert String names to GrantedAuthority objects
+                List<SimpleGrantedAuthority> authorities = authorityNames.stream()
+                        .map(SimpleGrantedAuthority::new)
+                        .toList();
 
                 // 3. Validate token integrity and expiration
                 if (jwtUtil.validateToken(token, userDetails)) {
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             userDetails,
                             null,
-                            userDetails.getAuthorities()
+                            authorities
                     );
 
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

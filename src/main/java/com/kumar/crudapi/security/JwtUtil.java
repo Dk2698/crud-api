@@ -1,6 +1,7 @@
 package com.kumar.crudapi.security;
 
 
+import com.kumar.crudapi.entity.AppUser;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -11,7 +12,9 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.function.Function;
 
 @Component
@@ -32,12 +35,20 @@ public class JwtUtil {
         this.expirationTime = expirationTime;
     }
 
-    public String generateAccessToken(String username) {
+    public String generateAccessToken(AppUser user) {
+        List<String> authorities = user.getRoles().stream()
+                .flatMap(role -> {
+                    List<String> rolesAndPerms = new ArrayList<>();
+                    rolesAndPerms.add(role.getName()); // e.g., ROLE_ADMIN
+                    role.getPermissions().forEach(p -> rolesAndPerms.add(p.getName())); // e.g., READ_PRIVILEGE
+                    return rolesAndPerms.stream();
+                })
+                .toList();
+
         return Jwts.builder()
-                .header()                       // 1. Start header building
-                .type("JWT")                // 2. Set "typ": "JWT"
-                .and()
-                .subject(username)
+                .header().type("JWT").and()
+                .subject(user.getUserName())
+                .claim("authorities", authorities) // Pass the list to the token
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expirationTime))
                 .signWith(secretKey, Jwts.SIG.HS512)
@@ -66,7 +77,7 @@ public class JwtUtil {
         return extractClaim(token, Claims::getExpiration).before(new Date());
     }
 
-    private Claims getAllClaims(String token) {
+    public Claims getAllClaims(String token) {
         return Jwts.parser()
                 .verifyWith(secretKey)
                 .build()
