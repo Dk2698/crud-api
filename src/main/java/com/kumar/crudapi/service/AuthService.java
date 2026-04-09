@@ -3,9 +3,12 @@ package com.kumar.crudapi.service;
 import com.kumar.crudapi.entity.AppUser;
 import com.kumar.crudapi.entity.Permission;
 import com.kumar.crudapi.entity.Role;
+import com.kumar.crudapi.exception.UserNotFoundException;
 import com.kumar.crudapi.repository.AppUserRepository;
 import com.kumar.crudapi.repository.PermissionRepository;
 import com.kumar.crudapi.repository.RoleRepository;
+import com.kumar.crudapi.security.JwtUtil;
+import com.kumar.crudapi.service.dto.AuthResponse;
 import com.kumar.crudapi.service.dto.RegisterRequest;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
@@ -25,6 +28,8 @@ public class AuthService {
     private final RoleRepository roleRepository;
     private final PermissionRepository permissionRepository;
     private final PasswordEncoder encoder;
+    private final JwtUtil jwtUtil;
+    private final RefreshTokenService refreshTokenService;
 
     @Transactional
     public void register(RegisterRequest req) {
@@ -77,5 +82,16 @@ public class AuthService {
 
     public void blacklist(String token) {
 //        redisTemplate.opsForValue().set(token, "blacklisted");
+    }
+
+    public AuthResponse login(String username) {
+        // Fetch the full user object including Roles and Permissions
+        AppUser user = appUserRepository.findByUserName(username)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+        String accessToken = jwtUtil.generateAccessToken(user); // Pass the object, not just a string
+        String refreshToken = refreshTokenService.createToken(username);
+
+        return new AuthResponse(accessToken, refreshToken);
     }
 }
