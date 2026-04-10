@@ -114,7 +114,7 @@ public class SecurityConfig {
                 .headers(headers -> headers.frameOptions(frame -> frame.disable()))
 //                .httpBasic(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/h2-console/**", "/auth/**").permitAll()
+                        .requestMatchers("/h2-console/**", "/auth/**","/actuator/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 // Register your JWT filter before the standard login filter

@@ -1,0 +1,7 @@
+| Tool         | URL                                            |
+| ------------ | ---------------------------------------------- |
+| Prometheus   | [http://localhost:9090](http://localhost:9090) |
+| Grafana      | [http://localhost:3000](http://localhost:3000) |
+| Alertmanager | [http://localhost:9093](http://localhost:9093) |
+| Kibana       | [http://localhost:5601](http://localhost:5601) |
+| Zipkin       | [http://localhost:9411](http://localhost:9411) |

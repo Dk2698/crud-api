@@ -1,0 +1,6 @@
+route:
+  receiver: "default"
+
+receivers:
+  - name: "default"
+    # Example: add email/slack later
