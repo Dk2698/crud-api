@@ -1,0 +1,10 @@
+groups:
+  - name: spring-alerts
+    rules:
+      - alert: HighCPUUsage
+        expr: system_cpu_usage > 0.9
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High CPU usage detected"
