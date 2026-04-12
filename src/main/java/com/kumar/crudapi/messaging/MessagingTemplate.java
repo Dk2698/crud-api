@@ -8,6 +8,8 @@ import com.kumar.crudapi.messaging.core.factory.MessagingFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.Map;
+
 @Component
 @RequiredArgsConstructor
 public class MessagingTemplate {
@@ -25,6 +27,11 @@ public class MessagingTemplate {
         message.setTopic(topic.getDestination());
         message.setPayload(payload);
         message.setTimestamp(System.currentTimeMillis());
+
+        // optional metadata
+        message.setHeaders(Map.of(
+                "type", payload.getClass().getName()
+        ));
 
         client.publish(message);
     }

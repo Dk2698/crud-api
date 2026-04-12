@@ -27,4 +27,9 @@ public class OrderEventHandler implements MessageHandler {
     public boolean retryOnError() {
         return true;
     }
+
+    @Override
+    public void handle(Object payload, Message message) {
+
+    }
 }

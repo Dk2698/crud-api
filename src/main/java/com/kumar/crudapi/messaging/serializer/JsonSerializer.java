@@ -2,7 +2,6 @@ package com.kumar.crudapi.messaging.serializer;
 
 
 import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.SerializationFeature;
 
 public class JsonSerializer {
 
@@ -48,5 +47,16 @@ public class JsonSerializer {
         } catch (Exception e) {
             throw new RuntimeException("JSON byte deserialization failed", e);
         }
+    }
+
+    public <T> T convert(Object payload, Class<T> type) {
+
+        if (payload == null) return null;
+
+        if (type.isInstance(payload)) {
+            return type.cast(payload);
+        }
+
+        return objectMapper.convertValue(payload, type);
     }
 }

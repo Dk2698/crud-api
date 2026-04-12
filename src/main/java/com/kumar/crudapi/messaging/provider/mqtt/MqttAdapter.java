@@ -2,6 +2,7 @@ package com.kumar.crudapi.messaging.provider.mqtt;
 
 import com.kumar.crudapi.messaging.api.*;
 import com.kumar.crudapi.messaging.core.registry.SubscriptionRegistry;
+import com.kumar.crudapi.messaging.serializer.HandlerTypeResolver;
 import com.kumar.crudapi.messaging.serializer.JsonSerializer;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.paho.client.mqttv3.*;
@@ -16,6 +17,7 @@ public class MqttAdapter implements PubSubClient {
     private final MqttClient client;
     private final SubscriptionRegistry registry;
     private final JsonSerializer serializer;
+    private final HandlerTypeResolver handlerTypeResolver;
 
     public MqttAdapter(MqttClient client,
                        SubscriptionRegistry registry, JsonSerializer serializer) throws MqttException {
@@ -23,7 +25,7 @@ public class MqttAdapter implements PubSubClient {
         this.client = client;
         this.registry = registry;
         this.serializer = serializer;
-
+        this.handlerTypeResolver = new HandlerTypeResolver();
         initCallback();
     }
 
@@ -35,41 +37,90 @@ public class MqttAdapter implements PubSubClient {
 
             @Override
             public void connectionLost(Throwable cause) {
-                log.error("MQTT connection lost", cause);
-
-                new Thread(() -> reconnectAndResubscribe()).start();
+                log.error("❌ MQTT connection lost", cause);
+                new Thread(MqttAdapter.this::reconnectAndResubscribe).start();
             }
 
             @Override
             public void messageArrived(String topic, MqttMessage mqttMessage) {
-                System.out.println("📩 RAW MQTT MESSAGE");
-                System.out.println("topic = " + topic);
 
-                MessageHandler handler = registry.get(topic);
-
-                if (handler == null) {
-                    System.out.println("⚠️ No handler registered for topic: " + topic);
-                    return;
-                }
-
-                Message message = new Message(
-                        topic,
-                        new String(mqttMessage.getPayload())
+                // 🔥 async processing (non-blocking MQTT thread)
+                CompletableFuture.runAsync(() ->
+                        processMessage(topic, mqttMessage)
                 );
-
-                CompletableFuture.runAsync(() -> {
-                    try {
-                        handler.handle(message);
-                    } catch (Exception e) {
-                        handler.onError(message, e);
-                    }
-                });
             }
 
             @Override
             public void deliveryComplete(IMqttDeliveryToken token) {
+                log.debug("✅ Delivery complete: {}", token.getMessageId());
             }
         });
+    }
+
+    private void processMessage(String topic, MqttMessage mqttMessage) {
+
+        String json = new String(mqttMessage.getPayload());
+
+        log.debug("📩 Incoming message | topic={} payload={}", topic, json);
+
+        MessageHandler<?> handler = registry.get(topic);
+
+        if (handler == null) {
+            log.warn("⚠️ No handler registered for topic: {}", topic);
+            return;
+        }
+
+        Message message = new Message(topic, json);
+
+        try {
+            // 🔥 resolve handler generic type
+            Class<?> payloadType = handlerTypeResolver.resolve(handler);
+
+            // 🔥 deserialize JSON → object
+            Object payload = serializer.fromJson(json, payloadType);
+
+            log.debug("✅ Deserialized payload type={}", payloadType.getSimpleName());
+
+            // 🔥 invoke handler
+            invokeHandler(handler, payload, message);
+
+        } catch (Exception e) {
+            handleError(handler, message, e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void invokeHandler(MessageHandler<?> handler, Object payload, Message message) {
+
+        try {
+            ((MessageHandler<Object>) handler).handle(payload, message);
+
+        } catch (Exception e) {
+            handleError(handler, message, e);
+        }
+    }
+
+    private void handleError(MessageHandler<?> handler, Message message, Exception e) {
+
+        log.error("❌ Message processing failed | topic={} payload={}",
+                message.getTopic(),
+                message.getPayload(),
+                e
+        );
+
+        try {
+            handler.onError(message, e);
+
+            if (handler.retryOnError()) {
+                log.warn("🔁 Retrying message for topic={}", message.getTopic());
+
+                // 🔥 simple retry (you can enhance later)
+                invokeHandler(handler, message.getPayload(), message);
+            }
+
+        } catch (Exception ex) {
+            log.error("❌ Error during retry handling", ex);
+        }
     }
 
     private void reconnectAndResubscribe() {

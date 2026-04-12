@@ -10,4 +10,5 @@ import java.lang.annotation.Target;
 public @interface MqttSubscriber {
     String topicKey();
     String group() default "";   // future Kafka-like grouping
+    Class<?> type();
 }
