@@ -1,0 +1,51 @@
+messaging:
+
+  default-provider: kafka
+
+  providers:
+
+    mqtt:
+      broker-url: tcp://localhost:1883
+      client-id: service-a
+      username: admin
+      password: admin
+
+    kafka:
+      bootstrap-servers: localhost:9092
+      group-id: my-group
+
+    rabbit:
+      host: localhost
+      port: 5672
+      username: guest
+      password: guest
+
+  topics:
+
+    sensor-data:
+      provider: mqtt
+      destination: sensors/temperature
+      qos: 1
+
+    order-events:
+      provider: kafka
+      destination: order.events
+
+    billing-events:
+      provider: rabbit
+      destination: billing.queue
+
+  subscriptions:
+
+    sensor-data:
+      provider: mqtt
+      destination: sensors/temperature
+
+    order-events:
+      provider: kafka
+      destination: order.events
+      group-id: order-group
+
+    billing-events:
+      provider: rabbit
+      destination: billing.queue

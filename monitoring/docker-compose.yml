@@ -79,6 +79,26 @@ services:
     ports:
       - "9411:9411"
 
+
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: mosquitto
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+    restart: unless-stopped
+
+  app:
+    build: ..
+    container_name: messaging-app
+    depends_on:
+      - mosquitto
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    restart: unless-stopped
+
+
 volumes:
   prometheus-data:
   grafana-data:
