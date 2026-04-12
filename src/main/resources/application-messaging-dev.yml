@@ -12,7 +12,7 @@ messaging:
 
     kafka:
       bootstrap-servers: localhost:9092
-      group-id: my-group
+      group-id: order-service   # ✅ ONLY HERE
 
     rabbit:
       host: localhost
@@ -44,7 +44,6 @@ messaging:
     order-events:
       provider: kafka
       destination: order.events
-      group-id: order-group
 
     billing-events:
       provider: rabbit

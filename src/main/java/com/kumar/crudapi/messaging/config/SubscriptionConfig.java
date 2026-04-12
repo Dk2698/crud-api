@@ -10,7 +10,7 @@ public class SubscriptionConfig {
 
     private String provider;
     private String destination;
-    private String groupId;
+    private String routing;
 
     private Map<String, Object> properties = new HashMap<>();
 }

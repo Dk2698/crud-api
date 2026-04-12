@@ -1,11 +1,16 @@
 package com.kumar.crudapi.messaging.service;
 
+import com.kumar.crudapi.messaging.SensorData;
 import com.kumar.crudapi.messaging.api.Message;
 import com.kumar.crudapi.messaging.api.MessageHandler;
+import com.kumar.crudapi.messaging.api.MqttSubscriber;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 @Component
-public class OrderEventHandler implements MessageHandler {
+@MqttSubscriber(topicKey = "order-events", type = SensorData.class)
+@Slf4j
+public class OrderEventHandler implements MessageHandler<SensorData> {
 
     @Override
     public void handle(Message message) {
@@ -20,7 +25,7 @@ public class OrderEventHandler implements MessageHandler {
 
     @Override
     public void onError(Message message, Exception e) {
-        System.out.println("Handler error: " + e.getMessage());
+        log.debug("Handler error: " + e.getMessage());
     }
 
     @Override
@@ -29,7 +34,8 @@ public class OrderEventHandler implements MessageHandler {
     }
 
     @Override
-    public void handle(Object payload, Message message) {
-
+    public void handle(SensorData payload, Message message) {
+        log.debug("🔥 order ID: {}", payload.getSensorId());
+        log.debug("🔥 order: {}", payload.getSensorValue());
     }
 }

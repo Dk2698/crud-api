@@ -18,4 +18,7 @@ public class ProviderConfig {
 
     private String host;
     private Integer port;
+
+//    private String exchangeName = "app.exchange";
+//    private String queuePrefix = "app.queue.";
 }

@@ -64,4 +64,15 @@ public class RabbitProvider implements MessagingProvider {
             throw new RuntimeException("RabbitMQ init failed", e);
         }
     }
+
+
+//    @Override
+//    public PubSubClient createClient(ProviderConfig config) {
+//
+//        return new RabbitMQAdapter(
+//                connectionFactory,
+//                registry,
+//                config
+//        );
+//    }
 }
